@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3000;
  */
 app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async function (req, res) {
   // Interaction type and data
-  const { type, data, param2 } = req.body;
+  const { type, data } = req.body;
 
   /**
    * Handle verification requests
@@ -47,11 +47,16 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
     } 
     if (name === 'echo') {
       // Send a message into the channel where command was triggered from
+      // All options that the user passed in
+      var optionLength = req.body.data.options.length;
+      var echoResponse = "";
+      for (var i = 0; i < optionLength; i++) {
+        echoResponse += req.body.data.options[i].value;
+      }
       return res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-          // Fetches a random emoji to send from a helper function
-          content: param2,
+          content: echoResponse,
         },
       });
     }

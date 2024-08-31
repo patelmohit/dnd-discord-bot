@@ -32,6 +32,14 @@ const TEST_COMMAND = {
 const ECHO_COMMAND = {
   name: 'echo',
   description: 'Return back what you send!',
+  options: [
+    {
+      type: 3,
+      name: 'text',
+      description: 'What do you want to echo back?',
+      required: true,
+    },
+  ],
   type: 1,
   integration_types: [0, 1],
   contexts: [0, 1, 2],
