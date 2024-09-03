@@ -24,11 +24,13 @@ RUN apk add --no-cache clang lld musl-dev git
 RUN --mount=type=bind,source=src,target=src \
     --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
     --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
+    --mount=type=bind,source=.env,target=.env \
     --mount=type=cache,target=/app/target/ \
     --mount=type=cache,target=/usr/local/cargo/git/db \
     --mount=type=cache,target=/usr/local/cargo/registry/ \
 cargo build --locked --release && \
-cp ./target/release/$APP_NAME /bin/server
+cp ./target/release/$APP_NAME /bin/server && \
+cp ./.env /bin
 
 ################################################################################
 # Create a new stage for running the application that contains the minimal
@@ -57,6 +59,7 @@ USER appuser
 
 # Copy the executable from the "build" stage.
 COPY --from=build /bin/server /bin/
+COPY --from=build /bin/.env /
 
 # Expose the port that the application listens on.
 EXPOSE 3000
