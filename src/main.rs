@@ -2,6 +2,7 @@ use std::env;
 
 use serenity::async_trait;
 use serenity::model::channel::Message;
+use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 
 struct Handler;
@@ -18,6 +19,10 @@ impl EventHandler for Handler {
                 println!("Error sending message: {why:?}");
             }
         }
+    }
+
+    async fn ready(&self, _: Context, ready: Ready) {
+        println!("{} is connected!", ready.user.name);
     }
 }
 
