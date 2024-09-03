@@ -13,6 +13,10 @@ impl EventHandler for Handler {
             if let Err(why) = msg.channel_id.say(&ctx.http, "Pong!").await {
                 println!("Error sending message: {why:?}");
             }
+        } else if msg.content == "!test" {
+            if let Err(why) = msg.channel_id.say(&ctx.http, "rust meow?").await {
+                println!("Error sending message: {why:?}");
+            }
         }
     }
 }
