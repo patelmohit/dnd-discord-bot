@@ -4,7 +4,7 @@ use std::env;
 
 use serenity::async_trait;
 use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMessage};
-use serenity::model::application::Interaction;
+use serenity::model::application::{Command, Interaction};
 use serenity::model::gateway::Ready;
 
 use serenity::model::id::GuildId;
@@ -37,18 +37,22 @@ impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
 
-        let guild_id = GuildId::new(
-            env::var("GUILD_ID")
-                .expect("Expected GUILD_ID in environment")
-                .parse()
-                .expect("GUILD_ID must be an integer"),
-        );
+        // let guild_id = GuildId::new(
+        //     env::var("GUILD_ID")
+        //         .expect("Expected GUILD_ID in environment")
+        //         .parse()
+        //         .expect("GUILD_ID must be an integer"),
+        // );
 
-        let commands = guild_id
-            .set_commands(&ctx.http, vec![commands::test::register()])
-            .await;
+        // let commands = guild_id
+        //     .set_commands(&ctx.http, vec![commands::test::register()])
+        //     .await;
 
-        println!("I now have the following guild slash commands: {commands:#?}");
+        // println!("I now have the following guild slash commands: {commands:#?}");
+
+        let guild_command =
+            Command::create_global_command(&ctx.http, commands::test::register()).await;
+        println!("I created the following global slash command: {guild_command:#?}");
     }
 }
 
