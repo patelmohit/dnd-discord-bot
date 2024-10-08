@@ -4,7 +4,7 @@ use serenity::model::application::ResolvedOption;
 // https://github.com/serenity-rs/serenity/blob/current/examples/e14_slash_commands/src/commands/ping.rs
 
 pub fn run(_options: &[ResolvedOption]) -> String {
-    "meow meow".to_string()
+    "meowing from rust".to_string()
 }
 
 pub fn register() -> CreateCommand {

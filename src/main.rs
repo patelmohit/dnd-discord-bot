@@ -3,6 +3,8 @@ mod commands;
 use std::env;
 
 use serenity::async_trait;
+use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMessage};
+use serenity::model::application::{Command, Interaction};
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 
@@ -13,10 +15,21 @@ struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn message(&self, ctx: Context, msg: Message) {
-        if msg.content == "!ping" {
-            if let Err(why) = msg.channel_id.say(&ctx.http, "Pong!").await {
-                println!("Error sending message: {why:?}");
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        if let Interaction::Command(command) = interaction {
+            println!("Received command interaction: {command:#?}");
+
+            let content = match command.data.name.as_str() {
+                "test" => Some(commands::test::run(&command.data.options())),
+                _ => Some("not implemented :(".to_string()),
+            };
+
+            if let Some(content) = content {
+                let data = CreateInteractionResponseMessage::new().content(content);
+                let builder = CreateInteractionResponse::Message(data);
+                if let Err(why) = command.create_response(&ctx.http, builder).await {
+                    println!("Cannot respond to slash command: {why}");
+                }
             }
         }
     }
@@ -32,9 +45,7 @@ impl EventHandler for Handler {
         );
 
         let commands = guild_id
-            .set_commands(&ctx.http, vec![
-                commands::test::register()
-            ])
+            .set_commands(&ctx.http, vec![commands::test::register()])
             .await;
 
         println!("I now have the following guild slash commands: {commands:#?}");
@@ -42,7 +53,6 @@ impl EventHandler for Handler {
         // let guild_command =
         //     Command::create_global_command(&ctx.http, commands::wonderful_command::register())
         //         .await;
-
     }
 }
 
