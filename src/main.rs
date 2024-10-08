@@ -1,72 +1,43 @@
-mod commands;
-
 use std::env;
 
-use serenity::async_trait;
-use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMessage};
-use serenity::model::application::Interaction;
-use serenity::model::gateway::Ready;
+use poise::serenity_prelude as serenity;
 
-use serenity::model::id::GuildId;
-use serenity::prelude::*;
+struct Data {} // User data, which is stored and accessible in all command invocations
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
 
-struct Handler;
-
-#[async_trait]
-impl EventHandler for Handler {
-    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::Command(command) = interaction {
-            println!("Received command interaction: {command:#?}");
-
-            let content = match command.data.name.as_str() {
-                "test" => Some(commands::test::run(&command.data.options())),
-                _ => Some("not implemented :(".to_string()),
-            };
-
-            if let Some(content) = content {
-                let data = CreateInteractionResponseMessage::new().content(content);
-                let builder = CreateInteractionResponse::Message(data);
-                if let Err(why) = command.create_response(&ctx.http, builder).await {
-                    println!("Cannot respond to slash command: {why}");
-                }
-            }
-        }
-    }
-
-    async fn ready(&self, ctx: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
-
-        let guild_id = GuildId::new(
-            env::var("GUILD_ID")
-                .expect("Expected GUILD_ID in environment")
-                .parse()
-                .expect("GUILD_ID must be an integer"),
-        );
-
-        let commands = guild_id
-            .set_commands(&ctx.http, vec![commands::test::register()])
-            .await;
-
-        println!("I now have the following guild slash commands: {commands:#?}");
-    }
+/// Displays your or another user's account creation date
+#[poise::command(slash_command, prefix_command)]
+async fn test(
+    ctx: Context<'_>,
+    #[description = "Selected user"] user: Option<serenity::User>,
+) -> Result<(), Error> {
+    let response = "meow meow from Rust!";
+    ctx.say(response).await?;
+    Ok(())
 }
 
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
-    // Login with a bot token from the environment
-    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
-    // Set gateway intents, which decides what events the bot will be notified about
-    let intents = GatewayIntents::GUILD_MESSAGES;
+    let token = env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
+    let intents = serenity::GatewayIntents::GUILD_MESSAGES;
 
-    // Create a new instance of the Client, logging in as a bot.
-    let mut client = Client::builder(&token, intents)
-        .event_handler(Handler)
-        .await
-        .expect("Err creating client");
+    let framework = poise::Framework::builder()
+        .options(poise::FrameworkOptions {
+            commands: vec![test()],
+            ..Default::default()
+        })
+        .setup(|ctx, _ready, framework| {
+            Box::pin(async move {
+                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                Ok(Data {})
+            })
+        })
+        .build();
 
-    // Start listening for events by starting a single shard
-    if let Err(why) = client.start().await {
-        println!("Client error: {why:?}");
-    }
+    let client = serenity::ClientBuilder::new(token, intents)
+        .framework(framework)
+        .await;
+    client.unwrap().start().await.unwrap();
 }
