@@ -4,8 +4,7 @@ use std::env;
 
 use serenity::async_trait;
 use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMessage};
-use serenity::model::application::{Command, Interaction};
-use serenity::model::channel::Message;
+use serenity::model::application::Interaction;
 use serenity::model::gateway::Ready;
 
 use serenity::model::id::GuildId;
@@ -16,6 +15,7 @@ struct Handler;
 #[async_trait]
 impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        println!("wee");
         if let Interaction::Command(command) = interaction {
             println!("Received command interaction: {command:#?}");
 
@@ -49,10 +49,6 @@ impl EventHandler for Handler {
             .await;
 
         println!("I now have the following guild slash commands: {commands:#?}");
-
-        // let guild_command =
-        //     Command::create_global_command(&ctx.http, commands::wonderful_command::register())
-        //         .await;
     }
 }
 
