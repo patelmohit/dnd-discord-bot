@@ -19,7 +19,7 @@ async fn main() {
     dotenv::dotenv().ok();
     let token = env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
     let intents =
-        serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
+        serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::GUILD_MESSAGES;
     let guild_id = GuildId::new(
         env::var("GUILD_ID")
             .expect("Expected GUILD_ID in environment")
