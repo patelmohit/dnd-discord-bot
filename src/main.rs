@@ -1,23 +1,23 @@
 use std::env;
 
-use poise::serenity_prelude::{self as serenity, GuildId};
+use poise::serenity_prelude::{self as serenity, ClientBuilder, GatewayIntents, GuildId};
 
 struct Data {} // User data, which is stored and accessible in all command invocations
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
-/// Displays your or another user's account creation date
+/// Responds with "world!"
 #[poise::command(slash_command)]
-async fn test(ctx: Context<'_>) -> Result<(), Error> {
-    let response = "meow meow from Rust!";
-    ctx.say(response).await?;
+async fn hello(ctx: Context<'_>) -> Result<(), Error> {
+    ctx.say("world!").await?;
     Ok(())
 }
 
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
-    let token = env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
+    let discord_token =
+        env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
     let intents =
         serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::GUILD_MESSAGES;
     let guild_id = GuildId::new(
@@ -29,20 +29,20 @@ async fn main() {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![test()],
+            commands: vec![hello()],
             ..Default::default()
         })
-        .setup(move |ctx, _ready, framework| {
+        .setup(|ctx, _ready, framework| {
             Box::pin(async move {
-                poise::builtins::register_in_guild(ctx, &framework.options().commands, guild_id)
-                    .await?;
+                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {})
             })
         })
         .build();
 
-    let client = serenity::ClientBuilder::new(token, intents)
+    let client = ClientBuilder::new(discord_token, GatewayIntents::non_privileged())
         .framework(framework)
         .await;
+
     client.unwrap().start().await.unwrap();
 }
