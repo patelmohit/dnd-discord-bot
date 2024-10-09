@@ -1,32 +1,23 @@
 use std::env;
 
-use poise::serenity_prelude::{self as serenity, ClientBuilder, GatewayIntents, GuildId};
+use serenity::{
+    async_trait,
+    model::{channel::Message, gateway::Ready},
+    prelude::*,
+};
 
-struct Data {} // User data, which is stored and accessible in all command invocations
-type Error = Box<dyn std::error::Error + Send + Sync>;
-type Context<'a> = poise::Context<'a, Data, Error>;
+struct Handler;
 
-/// Responds with "world!"
-#[poise::command(slash_command)]
-async fn hello(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.say("world!").await?;
-    Ok(())
-}
-
-async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
-    // This is our custom error handler
-    // They are many errors that can occur, so we only handle the ones we want to customize
-    // and forward the rest to the default handler
-    match error {
-        poise::FrameworkError::Setup { error, .. } => panic!("Failed to start bot: {:?}", error),
-        poise::FrameworkError::Command { error, ctx, .. } => {
-            println!("Error in command `{}`: {:?}", ctx.command().name, error,);
+#[async_trait]
+impl EventHandler for Handler {
+    async fn message(&self, ctx: Context, msg: Message) {
+        if let Err(why) = msg.channel_id.say(&ctx.http, "hi there!").await {
+            println!("Error sending message: {:?}", why);
         }
-        error => {
-            if let Err(e) = poise::builtins::on_error(error).await {
-                println!("Error while handling error: {}", e)
-            }
-        }
+    }
+
+    async fn ready(&self, _: Context, ready: Ready) {
+        println!("{} is connected!", ready.user.name);
     }
 }
 
@@ -35,35 +26,18 @@ async fn main() {
     dotenv::dotenv().ok();
     let discord_token =
         env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
-    let intents =
-        serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::GUILD_MESSAGES;
-    let guild_id = GuildId::new(
-        env::var("GUILD_ID")
-            .expect("Expected GUILD_ID in environment")
-            .parse()
-            .expect("GUILD_ID must be an integer"),
-    );
+    let application_id = env::var("APP_ID")
+        .expect("Expected APP_ID in the environment")
+        .parse::<u64>()
+        .expect("Failed to parse APP_ID to integer");
 
-    let framework = poise::Framework::builder()
-        .options(poise::FrameworkOptions {
-            commands: vec![hello()],
-            on_error: |error| Box::pin(on_error(error)),
-            ..Default::default()
-        })
-        .setup(|ctx, _ready, framework| {
-            Box::pin(async move {
-                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data {})
-            })
-        })
-        .build();
+    let mut client = Client::builder(&discord_token)
+        .event_handler(Handler)
+        .application_id(application_id)
+        .await
+        .expect("Err creating client");
 
-    let client = ClientBuilder::new(
-        discord_token,
-        GatewayIntents::non_privileged() | GatewayIntents::GUILD_MESSAGES,
-    )
-    .framework(framework)
-    .await;
-
-    client.unwrap().start().await.unwrap();
+    if let Err(why) = client.start().await {
+        println!("Client error: {:?}", why);
+    }
 }
