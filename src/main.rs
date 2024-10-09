@@ -60,7 +60,7 @@ async fn main() {
 
     let client = ClientBuilder::new(
         discord_token,
-        GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT,
+        GatewayIntents::non_privileged() | GatewayIntents::GUILD_MESSAGES,
     )
     .framework(framework)
     .await;
