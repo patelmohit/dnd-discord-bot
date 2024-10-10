@@ -2,6 +2,7 @@ use std::env;
 
 use serenity::{
     async_trait,
+    client::bridge::gateway::GatewayIntents,
     model::{channel::Message, gateway::Ready},
     prelude::*,
 };
@@ -39,8 +40,10 @@ async fn main() {
         .expect("Expected APP_ID in the environment")
         .parse::<u64>()
         .expect("Failed to parse APP_ID to integer");
+    let intents = GatewayIntents::GUILD_MESSAGES;
 
     let mut client = Client::builder(&discord_token)
+        .intents(intents)
         .event_handler(Handler)
         .application_id(application_id)
         .await
