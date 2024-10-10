@@ -1,52 +1,43 @@
 use std::env;
 
-use poise::serenity_prelude::{self as serenity, ApplicationId, GuildId};
+use serenity::{
+    async_trait,
+    model::{channel::Message, gateway::Ready},
+    prelude::*,
+};
 
-struct Data {} // User data, which is stored and accessible in all command invocations
-type Error = Box<dyn std::error::Error + Send + Sync>;
-type Context<'a> = poise::Context<'a, Data, Error>;
+struct Handler;
 
-/// Displays your or another user's account creation date
-#[poise::command(slash_command)]
-async fn test(ctx: Context<'_>) -> Result<(), Error> {
-    let response = "meow meow from Rust!";
-    ctx.say(response).await?;
-    Ok(())
+#[async_trait]
+impl EventHandler for Handler {
+    async fn message(&self, ctx: Context, msg: Message) {
+        if let Err(why) = msg.channel_id.say(&ctx.http, "hi there!").await {
+            println!("Error sending message: {:?}", why);
+        }
+    }
+
+    async fn ready(&self, _: Context, ready: Ready) {
+        println!("{} is connected!", ready.user.name);
+    }
 }
 
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
-    let token = env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
-    let intents = serenity::GatewayIntents::GUILD_MESSAGES;
+    let discord_token =
+        env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
     let application_id = env::var("APP_ID")
         .expect("Expected APP_ID in the environment")
-        .parse::<ApplicationId>()
+        .parse::<u64>()
         .expect("Failed to parse APP_ID to integer");
-    let guild_id = GuildId::new(
-        env::var("GUILD_ID")
-            .expect("Expected GUILD_ID in environment")
-            .parse()
-            .expect("GUILD_ID must be an integer"),
-    );
 
-    let framework = poise::Framework::builder()
-        .options(poise::FrameworkOptions {
-            commands: vec![test()],
-            ..Default::default()
-        })
-        .setup(move |ctx, _ready, framework| {
-            Box::pin(async move {
-                poise::builtins::register_in_guild(ctx, &framework.options().commands, guild_id)
-                    .await?;
-                Ok(Data {})
-            })
-        })
-        .build();
-
-    let client = serenity::ClientBuilder::new(token, intents)
-        .framework(framework)
+    let mut client = Client::builder(&discord_token)
+        .event_handler(Handler)
         .application_id(application_id)
-        .await;
-    client.unwrap().start().await.unwrap();
+        .await
+        .expect("Err creating client");
+
+    if let Err(why) = client.start().await {
+        println!("Client error: {:?}", why);
+    }
 }
