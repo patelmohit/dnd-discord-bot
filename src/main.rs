@@ -24,7 +24,7 @@ impl EventHandler for Handler {
                 println!("Error sending message: {why:?}");
             }
         } else {
-            println!("Received a non-ping message: {}", msg.content)
+            println!("Received a non-ping message: {:?}", msg)
         }
     }
 
