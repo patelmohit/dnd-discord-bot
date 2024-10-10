@@ -38,16 +38,11 @@ async fn main() {
     dotenv::dotenv().ok();
     let discord_token =
         env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
-    let application_id = env::var("APP_ID")
-        .expect("Expected APP_ID in the environment")
-        .parse::<u64>()
-        .expect("Failed to parse APP_ID to integer");
     let intents = GatewayIntents::GUILD_MESSAGES;
 
     let mut client = Client::builder(&discord_token)
         .intents(intents)
         .event_handler(Handler)
-        .application_id(application_id)
         .await
         .expect("Err creating client");
 
