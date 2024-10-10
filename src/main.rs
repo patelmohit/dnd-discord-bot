@@ -23,6 +23,8 @@ impl EventHandler for Handler {
             if let Err(why) = msg.channel_id.say(&ctx.http, "Pong!").await {
                 println!("Error sending message: {why:?}");
             }
+        } else {
+            println!("Received a non-ping message: {}", msg.content)
         }
     }
 
