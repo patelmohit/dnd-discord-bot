@@ -80,6 +80,7 @@ async fn main() {
     let intents = GatewayIntents::GUILD_MESSAGES;
 
     let mut client = Client::builder(&discord_token, intents)
+        .intents(intents)
         .event_handler(Handler)
         .await
         .expect("Err creating client");
