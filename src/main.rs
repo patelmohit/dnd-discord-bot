@@ -1,9 +1,15 @@
+mod commands;
+
 use std::env;
 
 use serenity::{
+    all::{CreateInteractionResponse, CreateInteractionResponseMessage, GuildId},
     async_trait,
-    client::bridge::gateway::GatewayIntents,
-    model::{channel::Message, gateway::Ready},
+    model::{
+        application::{Command, Interaction},
+        channel::Message,
+        gateway::Ready,
+    },
     prelude::*,
 };
 
@@ -28,8 +34,41 @@ impl EventHandler for Handler {
         }
     }
 
-    async fn ready(&self, _: Context, ready: Ready) {
+    // Handle various interactions
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        if let Interaction::Command(command) = interaction {
+            println!("Received command interaction: {command:#?}");
+
+            let content = match command.data.name.as_str() {
+                "echo" => Some(commands::echo::run(&command.data.options())),
+                _ => Some("not implemented :(".to_string()),
+            };
+
+            if let Some(content) = content {
+                let data = CreateInteractionResponseMessage::new().content(content);
+                let builder = CreateInteractionResponse::Message(data);
+                if let Err(why) = command.create_response(&ctx.http, builder).await {
+                    println!("Cannot respond to slash command: {why}");
+                }
+            }
+        }
+    }
+
+    async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
+
+        let guild_id = GuildId::new(
+            env::var("GUILD_ID")
+                .expect("Expected GUILD_ID in environment")
+                .parse()
+                .expect("GUILD_ID must be an integer"),
+        );
+
+        let commands = guild_id
+            .set_commands(&ctx.http, vec![commands::echo::register()])
+            .await;
+
+        println!("I now have the following guild slash commands: {commands:#?}");
     }
 }
 
@@ -40,8 +79,7 @@ async fn main() {
         env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
     let intents = GatewayIntents::GUILD_MESSAGES;
 
-    let mut client = Client::builder(&discord_token)
-        .intents(intents)
+    let mut client = Client::builder(&discord_token, intents)
         .event_handler(Handler)
         .await
         .expect("Err creating client");
