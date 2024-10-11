@@ -1,8 +1,9 @@
-// mod commands;
+mod commands;
 
 use std::env;
 
 use serenity::{
+    all::{CreateInteractionResponse, CreateInteractionResponseMessage, GuildId, Interaction},
     async_trait,
     model::{channel::Message, gateway::Ready},
     prelude::*,
@@ -30,40 +31,40 @@ impl EventHandler for Handler {
     }
 
     // Handle various interactions
-    // async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-    //     if let Interaction::Command(command) = interaction {
-    //         println!("Received command interaction: {command:#?}");
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        if let Interaction::Command(command) = interaction {
+            println!("Received command interaction: {command:#?}");
 
-    //         let content = match command.data.name.as_str() {
-    //             "echo" => Some(commands::echo::run(&command.data.options())),
-    //             _ => Some("not implemented :(".to_string()),
-    //         };
+            let content = match command.data.name.as_str() {
+                "echo" => Some(commands::echo::run(&command.data.options())),
+                _ => Some("not implemented :(".to_string()),
+            };
 
-    //         if let Some(content) = content {
-    //             let data = CreateInteractionResponseMessage::new().content(content);
-    //             let builder = CreateInteractionResponse::Message(data);
-    //             if let Err(why) = command.create_response(&ctx.http, builder).await {
-    //                 println!("Cannot respond to slash command: {why}");
-    //             }
-    //         }
-    //     }
-    // }
+            if let Some(content) = content {
+                let data = CreateInteractionResponseMessage::new().content(content);
+                let builder = CreateInteractionResponse::Message(data);
+                if let Err(why) = command.create_response(&ctx.http, builder).await {
+                    println!("Cannot respond to slash command: {why}");
+                }
+            }
+        }
+    }
 
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
 
-        // let guild_id = GuildId::new(
-        //     env::var("GUILD_ID")
-        //         .expect("Expected GUILD_ID in environment")
-        //         .parse()
-        //         .expect("GUILD_ID must be an integer"),
-        // );
+        let guild_id = GuildId::new(
+            env::var("GUILD_ID")
+                .expect("Expected GUILD_ID in environment")
+                .parse()
+                .expect("GUILD_ID must be an integer"),
+        );
 
-        // let commands = guild_id
-        //     .set_commands(&ctx.http, vec![commands::echo::register()])
-        //     .await;
+        let commands = guild_id
+            .set_commands(&ctx.http, vec![commands::echo::register()])
+            .await;
 
-        // println!("I now have the following guild slash commands: {commands:#?}");
+        println!("I now have the following guild slash commands: {commands:#?}");
     }
 }
 
