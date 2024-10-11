@@ -72,7 +72,7 @@ async fn main() {
     dotenv::dotenv().ok();
     let discord_token =
         env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in the environment");
-    let intents = GatewayIntents::GUILD_MESSAGES;
+    let intents = GatewayIntents::empty();
 
     let mut client = Client::builder(&discord_token, intents)
         .event_handler(Handler)
